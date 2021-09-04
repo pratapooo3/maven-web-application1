@@ -39,8 +39,9 @@ node{
             {
                 sh"docker images"
                 sh"docker tag myimage:${B_Num} veeer/myimage:${B_Num}"
-                sh "docker push veeer/myimage:${B_Num}"
+                sh"docker push veeer/myimage:${B_Num}"
                 sh"docker rmi veeer/myimage:${B_Num}"
+                sh"docker rmi myimage:${B_Num}"
             }                            
                                 
             stage('general information')
