@@ -1,83 +1,54 @@
-pipeline{
-
-agent any
-
-tools
-{
-  maven 'maven3.6.3'
-
-}
-
-triggers{
- pollSCM('* * * * *')
-}
-
-options{
-    timestamps()
-    buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '2', daysToKeepStr: '', numToKeepStr: '2'))
-}
-
- stages{
-   
-   stage('CheckoutCode')
-   {
-     steps{
-	 git branch: 'development', credentialsId: '8e348aa2-9531-4dbe-863d-1adb64897470', url: 'https://github.com/MithunTechnologiesDevOps/maven-web-application.git'
-	 }
-   }
-   
-   stage('Build')
-   {
-    steps{
-	  sh "mvn clean package"
-	 }
-   }
-   
-    stage('ExecuteSonarQubeReport')
-   {
-     steps{
-	  sh "mvn sonar:sonar"
-	 }
-   }
-   
-   stage('UploadArtifactintoNexus')
-   {
-     steps{
-	  sh "mvn deploy"
-	 }
-   }
-   
-  stage('DeployAppIntoTomcat')
- {
-   steps{
-  sshagent(['2b7b0c6a-5eff-4f4a-82c3-3630f91c70b5']) {
-  sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.1.222.74:/opt/apache-tomcat-9.0.41/webapps/"
-  }
- }
- }
- 
-  
- 
- }
- 
- post{
- 
- 
- success{
- mail bcc: 'devopstrainingblr@gmail.com', body: '''BuildOver!....
-
- Regards,
- Mithun Technologies,
- 9980923226''', cc: 'devopstrainingblr@gmail.com', from: '', replyTo: '', subject: 'BuildOver!!', to: 'devopstrainingblr@gmail.com'
- }
- 
- failure{
- mail bcc: 'devopstrainingblr@gmail.com', body: '''BuildOver!....
-
- Regards,
- Mithun Technologies,
- 9980923226''', cc: 'devopstrainingblr@gmail.com', from: '', replyTo: '', subject: 'BuildOver!!', to: 'devopstrainingblr@gmail.com'
- }
- 
- }
+node{
+    
+            def B_Num = BUILD_NUMBER
+    
+            stage('Git Clone')
+            {
+                 checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/pratapooo3/maven-web-application1.git']]])
+             }
+    
+    
+            stage('MavenBuild')
+            {
+                sh '''mvn clean package
+                whoami
+                pwd
+                ls -la
+                cd target/
+                ls -la'''
+             }
+    
+    
+            stage('build Docker image')
+            {
+                sh "docker build -t myimage:${B_Num} ."
+            }
+                               
+    
+            stage("login to  Registry") 
+            {
+                sh"docker logout"
+                    withCredentials([string(credentialsId: 'docker_hubpwd', variable: 'password')]) 
+                        {
+                            sh "docker login -u veeer -p ${Password}"
+                        }  
+            } 
+    
+    
+            stage('Docker image push ')
+            {
+                sh"docker images"
+                sh"docker tag myimage:${B_Num} veeer/myimage:${B_Num}"
+                sh "docker push veeer/myimage:${B_Num}"
+                sh"docker rmi veeer/myimage:${B_Num}"
+            }                            
+                                
+            stage('general information')
+            {
+                sh '''
+                whoami
+                pwd
+                ls -la
+                ip add | grep inet'''
+             }
 }
