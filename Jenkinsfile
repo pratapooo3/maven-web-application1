@@ -20,7 +20,7 @@ node{
                 sh "docker build -t veeer/myimage:${B_Num} ."
             }
                                
-    
+    //we need to provide login credentials so i used
             stage("login to Registry") 
             {
                 sh"docker logout"
@@ -41,12 +41,5 @@ node{
             {
              sh"docker rmi veeer/myimage:${B_Num}"
             }
-           stage('general information')
-           {
-                sh '''
-                whoami
-                pwd
-                ls -la
-                ip add | grep inet'''
-             }
+           
 }
