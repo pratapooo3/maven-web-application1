@@ -2,30 +2,26 @@ node{
     
             def B_Num = BUILD_NUMBER
     
-            stage('Git Clone')
+            stage('Git_checkout')
             {
                  checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/pratapooo3/maven-web-application1.git']]])
              }
     
     
-            stage('MavenBuild')
-            {
-                sh '''mvn clean package
-                whoami
-                pwd
-                ls -la
-                cd target/
-                ls -la'''
+           stage('Maven_Build')
+             {
+                sh"mvn clean package"
+                
              }
     
     
-            stage('build Docker image')
+            stage('build_dockerimage')
             {
-                sh "docker build -t myimage:${B_Num} ."
+                sh "docker build -t veeer/myimage:${B_Num} ."
             }
                                
     
-            stage("login to  Registry") 
+            stage("login to Registry") 
             {
                 sh"docker logout"
                     withCredentials([string(credentialsId: 'docker_hubpwd', variable: 'password')]) 
@@ -35,17 +31,18 @@ node{
             } 
     
     
-            stage('Docker image push ')
-            {
+           stage('Image push to Registry ')
+           {
                 sh"docker images"
-                sh"docker tag myimage:${B_Num} veeer/myimage:${B_Num}"
-                sh"docker push veeer/myimage:${B_Num}"
-                sh"docker rmi veeer/myimage:${B_Num}"
-                sh"docker rmi myimage:${B_Num}"
+                sh "docker push veeer/myimage:${B_Num}"
             }                            
-                                
-            stage('general information')
+           // for over come system storage issue.we delete the image and it is stored at registry 
+            stage("image delete")  
             {
+             sh"docker rmi veeer/myimage:${B_Num}"
+            }
+           stage('general information')
+           {
                 sh '''
                 whoami
                 pwd
